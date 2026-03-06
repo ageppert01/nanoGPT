@@ -3,5 +3,5 @@
 
 After running `prepare.py`:
 
-- train.bin has 190,987 tokens
-- val.bin has 20,897 tokens
+- train has 699,221 tokens
+- val has 77,692 tokens

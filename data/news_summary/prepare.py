@@ -12,7 +12,11 @@ enc = tiktoken.get_encoding("gpt2")
 
 if __name__ == '__main__':
     dataset = load_dataset("argilla/news-summary", num_proc=num_proc_load_dataset)
-    split_dataset = dataset["train"].train_test_split(test_size=0.0005, seed=2357, shuffle=True)
+    
+    dataset["train"] = dataset["train"].select(range(300))
+    dataset["test"] = dataset["test"].select(range(300))
+
+    split_dataset = dataset["train"].train_test_split(test_size=0.01, seed=2357, shuffle=True)
     split_dataset['val'] = split_dataset.pop('test')
 
     def process(example):

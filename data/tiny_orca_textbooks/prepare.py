@@ -11,12 +11,12 @@ num_proc_load_dataset = num_proc
 enc = tiktoken.get_encoding("gpt2")
 
 if __name__ == '__main__':
-    dataset = load_dataset("nampdn-ai/tiny-orca-textbooks", num_proc=num_proc_load_dataset)
+    dataset = load_dataset("argilla/news-summary", num_proc=num_proc_load_dataset)
     split_dataset = dataset["train"].train_test_split(test_size=0.0005, seed=2357, shuffle=True)
     split_dataset['val'] = split_dataset.pop('test')
 
     def process(example):
-        ids = enc.encode_ordinary(example['textbook'])
+        ids = enc.encode_ordinary(example['text'])
         ids.append(enc.eot_token)
         out = {'ids': ids, 'len': len(ids)}
         return out
@@ -39,6 +39,6 @@ if __name__ == '__main__':
         for batch_idx in tqdm(range(total_batches), desc=f'writing {filename}'):
             batch = dset.shard(num_shards=total_batches, index=batch_idx, contiguous=True).with_format('numpy')
             arr_batch = np.concatenate(batch['ids'])
-            arr[idx : idx + len(arr_batch)] = arr_batch
+            arr[idx: idx + len(arr_batch)] = arr_batch
             idx += len(arr_batch)
         arr.flush()

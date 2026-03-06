@@ -7,16 +7,17 @@ from datasets import load_dataset
 
 num_proc = 8
 num_proc_load_dataset = num_proc
+max_train_rows = 100
+val_size = 0.01
 
 enc = tiktoken.get_encoding("gpt2")
 
 if __name__ == '__main__':
     dataset = load_dataset("argilla/news-summary", num_proc=num_proc_load_dataset)
-    
-    dataset["train"] = dataset["train"].select(range(300))
-    dataset["test"] = dataset["test"].select(range(300))
 
-    split_dataset = dataset["train"].train_test_split(test_size=0.0005, seed=2357, shuffle=True)
+    dataset["train"] = dataset["train"].select(range(min(max_train_rows, len(dataset["train"]))))
+
+    split_dataset = dataset["train"].train_test_split(test_size=val_size, seed=2357, shuffle=True)
     split_dataset['val'] = split_dataset.pop('test')
 
     def process(example):
@@ -37,12 +38,10 @@ if __name__ == '__main__':
         filename = os.path.join(os.path.dirname(__file__), f'{split}.bin')
         dtype = np.uint16
         arr = np.memmap(filename, dtype=dtype, mode='w+', shape=(arr_len,))
-        total_batches = min(1024, len(dset))
 
         idx = 0
-        for batch_idx in tqdm(range(total_batches), desc=f'writing {filename}'):
-            batch = dset.shard(num_shards=total_batches, index=batch_idx, contiguous=True).with_format('numpy')
-            arr_batch = np.concatenate(batch['ids'])
-            arr[idx: idx + len(arr_batch)] = arr_batch
-            idx += len(arr_batch)
+        for example in tqdm(dset, desc=f'writing {filename}'):
+            ids = np.array(example['ids'], dtype=dtype)
+            arr[idx:idx + len(ids)] = ids
+            idx += len(ids)
         arr.flush()
